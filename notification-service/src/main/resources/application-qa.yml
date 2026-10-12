@@ -1,0 +1,5 @@
+app:
+  env: qa
+  features:
+    sms-enabled: false
+    email-enabled: true

@@ -1,0 +1,9 @@
+app:
+  env: dev
+  features:
+    mock-notifications: true
+    audit-logging: true
+
+notification:
+  service:
+    url: http://localhost:8083

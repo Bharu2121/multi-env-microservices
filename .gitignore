@@ -1,0 +1,34 @@
+# Compiled class files & build artifacts
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Environment files & Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pkcs12
+*.p12
+*.jks
+*.crt
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test reports & logs
+*.log
+logs/
+test-reports/

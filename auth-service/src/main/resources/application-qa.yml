@@ -1,0 +1,5 @@
+app:
+  env: qa
+  features:
+    mock-auth: true
+    debug-mode: false

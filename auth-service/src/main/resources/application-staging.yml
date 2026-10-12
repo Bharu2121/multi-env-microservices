@@ -1,0 +1,5 @@
+app:
+  env: staging
+  features:
+    mock-auth: false
+    debug-mode: false

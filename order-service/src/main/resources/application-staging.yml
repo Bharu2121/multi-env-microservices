@@ -1,0 +1,9 @@
+app:
+  env: staging
+  features:
+    mock-notifications: false
+    audit-logging: true
+
+notification:
+  service:
+    url: http://staging-notification.internal:8083

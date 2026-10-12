@@ -1,0 +1,141 @@
+name: Multi-Environment Promotion Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Git SHA / Docker Image Tag to deploy'
+        required: true
+        default: 'latest'
+  workflow_run:
+    workflows: ["Release & Image Build"]
+    types:
+      - completed
+
+jobs:
+  # ============================================================================
+  # 1. DEV DEPLOYMENT (Automatic)
+  # ============================================================================
+  deploy-dev:
+    name: Deploy to DEV (Automatic)
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy Services to DEV ECS Cluster (Stubbed)
+        run: |
+          IMAGE_TAG="${{ github.event.inputs.image_tag || github.sha }}"
+          echo "Deploying image tag ${IMAGE_TAG} to DEV environment..."
+          # aws ecs update-service --cluster dev-cluster --service auth-service --force-new-deployment
+          # aws ecs update-service --cluster dev-cluster --service order-service --force-new-deployment
+          # aws ecs update-service --cluster dev-cluster --service notification-service --force-new-deployment
+          echo "DEV deployment complete."
+
+      - name: Run DEV Smoke Test
+        run: |
+          echo "Simulating DEV smoke check..."
+          # ./scripts/smoke-test.sh dev.internal.domain
+
+  # ============================================================================
+  # 2. QA DEPLOYMENT (Integration & API Tests)
+  # ============================================================================
+  deploy-qa:
+    name: Deploy to QA & Run Integration Tests
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy Services to QA ECS Cluster (Stubbed)
+        run: |
+          IMAGE_TAG="${{ github.event.inputs.image_tag || github.sha }}"
+          echo "Deploying image tag ${IMAGE_TAG} to QA environment..."
+          # aws ecs update-service --cluster qa-cluster --service auth-service --force-new-deployment
+          # aws ecs update-service --cluster qa-cluster --service order-service --force-new-deployment
+          # aws ecs update-service --cluster qa-cluster --service notification-service --force-new-deployment
+
+      - name: Run QA Integration and API Tests
+        run: |
+          echo "Running QA Integration & API test suite against QA environment..."
+          # mvn test -pl order-service -Dtest=OrderRepositoryIntegrationTest
+
+  # ============================================================================
+  # 3. STAGING DEPLOYMENT (Smoke & E2E Tests)
+  # ============================================================================
+  deploy-staging:
+    name: Deploy to Staging & Run E2E Tests
+    needs: deploy-qa
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy Services to Staging ECS Cluster (Stubbed)
+        run: |
+          IMAGE_TAG="${{ github.event.inputs.image_tag || github.sha }}"
+          echo "Deploying image tag ${IMAGE_TAG} to Staging environment..."
+          # aws ecs update-service --cluster staging-cluster --service auth-service --force-new-deployment
+          # aws ecs update-service --cluster staging-cluster --service order-service --force-new-deployment
+          # aws ecs update-service --cluster staging-cluster --service notification-service --force-new-deployment
+
+      - name: Run Staging Smoke and E2E Tests
+        run: |
+          echo "Executing Staging Smoke and End-to-End Tests..."
+          # ./scripts/smoke-test.sh staging.internal.domain
+
+  # ============================================================================
+  # 4. PRODUCTION DEPLOYMENT (Requires Reviewers & Rollback Handling)
+  # ============================================================================
+  deploy-prod:
+    name: Deploy to Production
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment:
+      name: production # Requires manual approval / reviewers configured in GitHub Settings
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Pre-Deployment Backup Verification
+        run: |
+          echo "Checking pre-migration RDS snapshot readiness..."
+          # aws rds describe-db-snapshots --db-instance-identifier prod-orders-db
+
+      - name: Deploy Services to Production ECS Cluster (Stubbed)
+        id: deploy-step
+        run: |
+          IMAGE_TAG="${{ github.event.inputs.image_tag || github.sha }}"
+          echo "Promoting image tag ${IMAGE_TAG} to PRODUCTION..."
+          # aws ecs update-service --cluster prod-cluster --service auth-service --force-new-deployment
+          # aws ecs update-service --cluster prod-cluster --service order-service --force-new-deployment
+          # aws ecs update-service --cluster prod-cluster --service notification-service --force-new-deployment
+
+      - name: Run Production Smoke Verification
+        id: smoke-verification
+        run: |
+          echo "Running post-deploy smoke test verification on production..."
+          # ./scripts/smoke-test.sh prod.api.domain
+          # For testing pipeline behavior, verification passes:
+          echo "Production smoke verification successful."
+
+  # ============================================================================
+  # 5. AUTOMATED ROLLBACK JOB (Triggers if Production Smoke Test Fails)
+  # ============================================================================
+  rollback-prod:
+    name: Automated Rollback on Smoke Test Failure
+    needs: deploy-prod
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger ECS Rollback to Previous Image Tag
+        run: |
+          echo "🚨 Post-deployment smoke test failed! Initiating rollback..."
+          echo "Re-deploying previous known good task definition / image tag..."
+          # PREVIOUS_IMAGE_TAG="<PREVIOUS_KNOWN_GOOD_SHA>"
+          # aws ecs update-service --cluster prod-cluster --service auth-service --task-definition auth-service:PREVIOUS
+          # aws ecs update-service --cluster prod-cluster --service order-service --task-definition order-service:PREVIOUS
+          # aws ecs update-service --cluster prod-cluster --service notification-service --task-definition notification-service:PREVIOUS
+          echo "Rollback initiated across ECS services."

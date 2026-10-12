@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: auth-service
+app:
+  jwt:
+    secret: test-jwt-secret-placeholder

@@ -1,0 +1,9 @@
+app:
+  env: prod
+  features:
+    mock-notifications: false
+    audit-logging: true
+
+notification:
+  service:
+    url: http://notification.prod.internal:8083

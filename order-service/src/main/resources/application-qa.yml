@@ -1,0 +1,9 @@
+app:
+  env: qa
+  features:
+    mock-notifications: false
+    audit-logging: true
+
+notification:
+  service:
+    url: http://qa-notification.internal:8083
