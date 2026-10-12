@@ -38,8 +38,9 @@ jobs:
       - name: Log in to Amazon ECR (Stubbed / Simulated)
         id: login-ecr
         run: |
-          echo "Simulating AWS ECR login with placeholder account <AWS_ACCOUNT_ID>..."
-          echo "registry=<AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com" >> $GITHUB_OUTPUT
+          echo "Simulating AWS ECR login with placeholder account..."
+          # Docker requires lowercase alphanumeric and dots/hyphens (no '<' or '>' characters)
+          echo "registry=123456789012.dkr.ecr.us-east-1.amazonaws.com" >> $GITHUB_OUTPUT
 
       - name: Build & Tag Container Images
         run: |
